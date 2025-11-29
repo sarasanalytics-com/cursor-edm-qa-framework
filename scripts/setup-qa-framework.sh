@@ -5,7 +5,7 @@
 # This script sets up the standard QA framework for any dbt/BigQuery project
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/BetterBodyCo/cursor-qa-framework/main/scripts/setup-qa-framework.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/sarasanalytics-com/cursor-edm-qa-framework/main/scripts/setup-qa-framework.sh | bash
 #
 # Or:
 #   ./setup-qa-framework.sh
@@ -13,7 +13,7 @@
 
 set -e
 
-FRAMEWORK_REPO="https://github.com/BetterBodyCo/cursor-qa-framework.git"
+FRAMEWORK_REPO="https://github.com/sarasanalytics-com/cursor-edm-qa-framework.git"
 TEMP_DIR="/tmp/cursor-qa-framework-$$"
 
 echo "🚀 Setting up Cursor QA Framework..."
