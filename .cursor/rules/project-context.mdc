@@ -1,0 +1,36 @@
+---
+description: Project context and BigQuery dataset information
+globs: ["**/*.sql", "**/*.yml", "**/*.py"]
+alwaysApply: true
+---
+
+# Data Warehouse Project Context
+
+This is a dbt project for a BigQuery data warehouse.
+
+## BigQuery Configuration
+- **Project ID:** `bigquery-analytics-464606`
+
+## Dataset Structure
+
+| Dataset | Purpose | Layer |
+|---------|---------|-------|
+| `prod_edm_main` | Main modelling layer | Facts and Dimensions |
+| `prod_edm_prerequisites` | Prerequisites/staging | Intermediate transforms |
+| `prod_edm_presentation` | Presentation layer | Final tables for reporting |
+
+## Key Tables
+
+### Presentation Layer
+- `OrderLinesMaster` - Order lines with product details from all platforms
+- `AdvertisingMasterAll` - Aggregated advertising metrics
+
+### Main Layer - Facts
+- `fact_order_lines` - Core order line items
+- `fact_overall_advertising` - Advertising metrics
+- `fact_product_advertising` - Product-level advertising
+
+### Main Layer - Dimensions
+- `dim_orders`, `dim_customer`, `dim_product`
+- `dim_platform`, `dim_brand`, `dim_campaign`
+- `dim_adgroup`, `dim_ads`, `dim_subscription`

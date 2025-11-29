@@ -1,0 +1,82 @@
+---
+description: Standard QA check types and SQL templates
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# QA Check Standards
+
+When running QA checks on any table, ALWAYS run these standard checks:
+
+## 1. Data Freshness Check
+```sql
+SELECT 
+    'Data Freshness' as check_type,
+    MAX({date_column}) as max_date,
+    MIN({date_column}) as min_date,
+    DATE_DIFF(CURRENT_DATE(), MAX({date_column}), DAY) as days_since_last_record
+FROM `{table_path}`
+```
+
+## 2. Null Value Check
+For each key column, check null percentages:
+```sql
+SELECT 
+    COUNT(*) as total_rows,
+    COUNTIF({column} IS NULL) as null_count,
+    ROUND(COUNTIF({column} IS NULL) * 100.0 / COUNT(*), 2) as null_pct
+FROM `{table_path}`
+```
+
+## 3. Duplicate Check
+```sql
+SELECT 
+    COUNT(*) as total_rows,
+    COUNT(DISTINCT {primary_key_columns}) as unique_rows,
+    COUNT(*) - COUNT(DISTINCT {primary_key_columns}) as duplicate_count
+FROM `{table_path}`
+```
+
+## 4. Referential Integrity Check
+For each foreign key relationship:
+```sql
+SELECT 
+    '{fact_table} -> {dim_table}' as relationship,
+    '{fk_column}' as fk_column,
+    COUNT(DISTINCT f.{fk_column}) as total_fk_values,
+    COUNT(DISTINCT CASE WHEN d.{pk_column} IS NULL THEN f.{fk_column} END) as orphan_fk_values,
+    ROUND(COUNT(DISTINCT CASE WHEN d.{pk_column} IS NULL THEN f.{fk_column} END) * 100.0 / 
+          NULLIF(COUNT(DISTINCT f.{fk_column}), 0), 2) as orphan_pct
+FROM `{fact_table}` f
+LEFT JOIN `{dim_table}` d ON f.{fk_column} = d.{pk_column}
+```
+
+## 5. Invalid Values Check
+```sql
+SELECT 
+    COUNTIF({numeric_column} < 0) as negative_values,
+    COUNTIF({numeric_column} = 0) as zero_values
+FROM `{table_path}`
+```
+
+## 6. Distribution Check
+For categorical columns:
+```sql
+SELECT 
+    {categorical_column},
+    COUNT(*) as row_count,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as pct_of_total
+FROM `{table_path}`
+GROUP BY 1
+ORDER BY 2 DESC
+```
+
+## How to Run QA
+
+When user asks for QA on a table:
+1. Identify the table and its dataset
+2. Run ALL standard checks above
+3. Run table-specific checks if defined
+4. Present results in standard output format
+5. Flag any issues above thresholds
+6. Provide actionable recommendations

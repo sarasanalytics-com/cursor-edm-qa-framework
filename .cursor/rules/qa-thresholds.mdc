@@ -1,0 +1,65 @@
+---
+description: QA check thresholds and severity definitions
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# QA Thresholds
+
+## Data Freshness
+- **Threshold:** Alert if `days_since_last_record > 2`
+- ✅ Pass: ≤ 2 days
+- 🔴 Fail: > 2 days
+
+## Null Values
+| Column Type | Threshold | Status |
+|-------------|-----------|--------|
+| Primary Keys | 0% nulls | 🔴 Fail if any nulls |
+| Foreign Keys | < 5% nulls | 🟡 Warning at 5%, 🔴 Fail at 10% |
+| Optional Fields | < 25% nulls | 🟡 Warning at 25%, 🔴 Fail at 50% |
+
+## Duplicates
+- **Threshold:** `duplicate_count = 0`
+- ✅ Pass: 0 duplicates
+- 🔴 Fail: Any duplicates
+
+## Referential Integrity
+- **Threshold:** `orphan_pct < 1%`
+- ✅ Pass: < 1% orphans
+- 🟡 Warning: 1-5% orphans
+- 🔴 Fail: > 5% orphans
+
+## Invalid Values
+- **Threshold:** No negative values in quantity/price fields
+- ✅ Pass: 0 negative values
+- 🔴 Fail: Any negative values (except where expected like refunds)
+
+## Severity Levels
+
+| Icon | Level | Meaning |
+|------|-------|---------|
+| ✅ | **Pass** | Within acceptable thresholds |
+| 🟡 | **Warning** | Slightly above threshold, monitor |
+| 🔴 | **Fail** | Critical issue, needs immediate attention |
+
+## Priority Classification
+
+| Priority | Description | SLA |
+|----------|-------------|-----|
+| **P0** | Data pipeline broken | Immediate fix required |
+| **P1** | Significant data quality issue | Fix within 24 hours |
+| **P2** | Minor issue | Fix within 1 week |
+| **P3** | Cosmetic/low impact | Fix when convenient |
+
+## Health Score Calculation
+
+```
+Health Score = (Passed Checks / Total Checks) × 100
+```
+
+| Score Range | Status |
+|-------------|--------|
+| 90-100% | 🟢 Excellent |
+| 75-89% | 🟡 Good (needs attention) |
+| 50-74% | 🟠 Poor (action required) |
+| < 50% | 🔴 Critical (immediate action) |

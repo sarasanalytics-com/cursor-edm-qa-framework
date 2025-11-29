@@ -1,0 +1,131 @@
+# ============================================================
+# QA Configuration Template
+# ============================================================
+# Copy this file to qa/qa_config.yml and customize for your project
+#
+# Instructions:
+# 1. Replace placeholder values with your project specifics
+# 2. Add your tables under the 'tables' section
+# 3. Document any known issues under 'known_issues'
+# ============================================================
+
+version: 1.0
+
+# ============================================================
+# PROJECT CONFIGURATION
+# ============================================================
+# Replace these with your BigQuery project details
+
+project_id: "YOUR-BIGQUERY-PROJECT-ID"  # e.g., "my-company-analytics-123456"
+
+# Dataset mappings - customize for your project
+datasets:
+  main: "YOUR_MAIN_DATASET"           # e.g., "prod_edm_main"
+  staging: "YOUR_STAGING_DATASET"      # e.g., "prod_edm_staging"
+  presentation: "YOUR_PRESENTATION_DATASET"  # e.g., "prod_edm_presentation"
+
+# ============================================================
+# GLOBAL THRESHOLDS
+# ============================================================
+# Adjust these based on your data quality requirements
+
+thresholds:
+  data_freshness_days: 2          # Alert if data older than X days
+  null_pct_primary_key: 0         # Primary keys must have 0% nulls
+  null_pct_foreign_key: 5         # Foreign keys allow up to 5% nulls
+  null_pct_optional: 25           # Optional fields allow up to 25% nulls
+  duplicate_count: 0              # No duplicates allowed
+  orphan_pct: 1                   # Max 1% orphan foreign keys
+
+# ============================================================
+# TABLE DEFINITIONS
+# ============================================================
+# Add your tables here following this pattern
+
+tables:
+  # Example fact table
+  # ------------------
+  # fact_example:
+  #   dataset: main
+  #   description: "Description of your table"
+  #   date_column: date
+  #   primary_key:
+  #     - id_column_1
+  #     - id_column_2
+  #   required_columns:
+  #     - column_1
+  #     - column_2
+  #   foreign_keys:
+  #     - column: dim_key
+  #       references:
+  #         table: dim_table
+  #         column: key_column
+  #   numeric_columns:
+  #     - amount
+  #     - quantity
+  #   categorical_columns:
+  #     - status
+  #     - type
+
+  # Example dimension table
+  # -----------------------
+  # dim_example:
+  #   dataset: main
+  #   description: "Description of dimension"
+  #   primary_key:
+  #     - key_column
+  #   required_columns:
+  #     - key_column
+  #     - name
+
+  # YOUR TABLES GO HERE
+  # -------------------
+  your_first_table:
+    dataset: main
+    description: "Replace with your table description"
+    date_column: date
+    primary_key:
+      - id
+    required_columns:
+      - id
+      - date
+    foreign_keys: []
+    numeric_columns: []
+    categorical_columns: []
+
+# ============================================================
+# KNOWN ISSUES
+# ============================================================
+# Document accepted data quality issues here
+
+known_issues:
+  # Example known issue
+  # -------------------
+  # - id: ISSUE-001
+  #   table: table_name
+  #   column: column_name
+  #   description: "Why this issue exists and is accepted"
+  #   severity: P2  # P0, P1, P2, or P3
+  #   status: accepted  # open, in_progress, accepted
+  #   accepted_orphan_pct: 10  # if referential integrity issue
+  #   accepted_null_pct: 25   # if null value issue
+
+  # YOUR KNOWN ISSUES GO HERE
+  # -------------------------
+  []
+
+# ============================================================
+# DOWNSTREAM DEPENDENCIES
+# ============================================================
+# Define which tables depend on which (for PR QA checks)
+
+dependencies:
+  # Example:
+  # fact_orders:
+  #   - presentation_orders_summary
+  #   - report_daily_sales
+  
+  # YOUR DEPENDENCIES GO HERE
+  # -------------------------
+  {}
+

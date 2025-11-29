@@ -1,0 +1,78 @@
+---
+description: Registry of known and accepted data quality issues
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Known Issues Registry
+
+These are known data quality issues that have been reviewed and accepted. 
+Do NOT flag these as failures during QA checks.
+
+## Active Known Issues
+
+### SUB-001: Amazon Subscription Key Orphans
+| Field | Value |
+|-------|-------|
+| **Table** | `fact_order_lines` |
+| **Column** | `subscription_key` |
+| **Issue** | Amazon Subscribe & Save subscriptions not loaded into `dim_subscription` |
+| **Expected Orphan %** | ~81% |
+| **Affected Rows** | ~8.4M |
+| **Severity** | P1 |
+| **Status** | 🔄 In Progress |
+| **Accepted Threshold** | 85% orphans |
+
+### PROD-001: Advertising Product Key Orphans
+| Field | Value |
+|-------|-------|
+| **Table** | `fact_product_advertising` |
+| **Column** | `product_key` |
+| **Issue** | Ad platform products not in `dim_product` (by design) |
+| **Expected Orphan %** | ~90% |
+| **Affected Rows** | ~87K |
+| **Severity** | P2 |
+| **Status** | ✅ Accepted |
+| **Accepted Threshold** | 95% orphans |
+
+### CUST-001: Amazon Customer ID Nulls
+| Field | Value |
+|-------|-------|
+| **Table** | `OrderLinesMaster` |
+| **Column** | `customer_id` |
+| **Issue** | Amazon orders do not have customer_id |
+| **Expected Null %** | ~24% |
+| **Severity** | P3 |
+| **Status** | ✅ Accepted |
+| **Accepted Threshold** | 25% nulls |
+
+### CURR-001: Invalid Currency Codes
+| Field | Value |
+|-------|-------|
+| **Table** | `OrderLinesMaster` |
+| **Column** | `currency_code` |
+| **Issue** | Invalid codes like `Amazon.com.au` instead of `AUD` |
+| **Affected Rows** | ~120 |
+| **Severity** | P2 |
+| **Status** | 🔴 Open |
+| **Accepted Threshold** | None - needs fix |
+
+---
+
+## How to Handle Known Issues in QA
+
+1. **Check against registry** before flagging failures
+2. **Compare actual values** to accepted thresholds
+3. **Flag only if exceeds** accepted threshold
+4. **Note the known issue ID** in the report if within threshold
+5. **Update registry** when issues are resolved
+
+## Adding New Known Issues
+
+When a data quality issue is identified and accepted:
+1. Assign unique ID (format: `XXX-001`)
+2. Document all fields above
+3. Set appropriate severity (P0-P3)
+4. Define accepted threshold
+5. Add to this registry
+6. Update `qa/qa_config.yml` as well

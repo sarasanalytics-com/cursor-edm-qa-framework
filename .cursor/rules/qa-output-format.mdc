@@ -1,0 +1,87 @@
+---
+description: Standardized output format for QA results
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# QA Output Format
+
+Always present QA results in this standardized format:
+
+## 1. Executive Summary
+
+| Metric | Value |
+|--------|-------|
+| Total Tables Checked | X |
+| Total Checks Run | X |
+| Passed | X |
+| Warnings | X |
+| Failed | X |
+| **Overall Health Score** | **X%** |
+
+## 2. Quick Summary Table
+
+| Table | Freshness | Nulls | Duplicates | Ref. Integrity | Invalid Values | Overall |
+|-------|-----------|-------|------------|----------------|----------------|---------|
+| TableName | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | Status |
+
+## 3. Detailed Results Per Table
+
+For each table, show:
+
+### Data Freshness
+| Metric | Value |
+|--------|-------|
+| Latest Record | YYYY-MM-DD |
+| Days Since Last Record | X |
+| **Status** | ✅/🔴 |
+
+### Null Values
+| Column | Null Count | Null % | Threshold | Status |
+|--------|-----------|--------|-----------|--------|
+| column_name | X | X% | X% | ✅/🟡/🔴 |
+
+### Duplicates
+| Metric | Value |
+|--------|-------|
+| Total Rows | X |
+| Unique Rows | X |
+| Duplicates | X |
+| **Status** | ✅/🔴 |
+
+### Referential Integrity
+| Relationship | Total FKs | Orphans | Orphan % | Status |
+|--------------|-----------|---------|----------|--------|
+| fk → dim | X | X | X% | ✅/🟡/🔴 |
+
+### Invalid Values
+| Check | Count | Status |
+|-------|-------|--------|
+| Negative quantity | X | ✅/🔴 |
+| Zero values | X | 🟡 Monitor |
+
+## 4. Action Items
+
+| Priority | ID | Issue | Table | Impact | Owner | Due |
+|----------|----|----|-------|--------|-------|-----|
+| P0/P1/P2/P3 | XXX-001 | Description | table_name | X rows | TBD | TBD |
+
+## 5. SQL Queries Used
+
+Include ALL SQL queries executed with:
+- Check type and table name
+- Pass/Fail status indicator
+- Known issue ID (if applicable)
+- Complete SQL for reproducibility
+
+## 6. Sign-off Section
+
+| Role | Name | Date | Status |
+|------|------|------|--------|
+| QA Run | Cursor AI | YYYY-MM-DD | Complete |
+| Review | - | - | Pending |
+| Approved | - | - | Pending |
+
+## Output Location
+
+Save all QA results to: `/qa/QA Results/QA-check-YYYY-MM-DD.md`

@@ -1,0 +1,107 @@
+---
+description: Rules for preparing PR descriptions with QA results
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# PR Preparation Rules
+
+When user asks to "prepare PR", "review for PR", or "create PR description":
+
+## Step 1: Identify Changed Tables & Downstream Dependencies
+
+1. **Look at git diff** to identify which model files (.sql) were modified
+2. **Map files to tables** - e.g., `models/Modelling/Main/fact_order_lines.sql` → `fact_order_lines`
+3. **Identify downstream tables** that depend on the changed tables:
+
+| If Changed | Also Check (Downstream) |
+|------------|------------------------|
+| `fact_order_lines` | `OrderLinesMaster` |
+| `fact_overall_advertising` | `AdvertisingMasterAll` |
+| `dim_*` tables | Any fact tables that reference them |
+| Prerequisites tables | Their corresponding main layer tables |
+
+**ONLY run QA on:**
+- ✅ Tables directly modified in this PR
+- ✅ Downstream tables that depend on modified tables
+- ❌ NOT all tables in the qa_config.yml
+
+## Step 2: Run QA Checks on Affected Tables Only
+
+For ONLY the changed tables + downstream dependencies identified in Step 1:
+
+**Follow the existing QA rules defined in:**
+- `qa-check-standards.mdc` - For the 6 standard checks (freshness, nulls, duplicates, RI, invalid values, distribution)
+- `qa-thresholds.mdc` - For pass/fail thresholds
+- `qa-output-format.mdc` - For output formatting
+- `known-issues.mdc` - To exclude known/accepted issues
+
+Run checks using BigQuery MCP.
+
+## Step 3: Save QA Results to File
+
+Save the full QA report to:
+```
+/qa/QA Results/PR-QA-{branch-name}-{YYYY-MM-DD}.md
+```
+
+Example: `/qa/QA Results/PR-QA-abhishek-dev-2025-11-28.md`
+
+The QA report format should follow `qa-output-format.mdc` exactly.
+
+## Step 4: Generate PR Description File
+
+Save PR description to: `.github/pr-body.md`
+
+Format:
+```markdown
+## 📝 What Changed
+[Actual description of changes based on modified files]
+
+## 🎯 Tables Affected
+- table_name_1
+- table_name_2
+
+## ✅ Pre-Merge Checklist
+- [x] Code reviewed by Cursor AI
+- [x] QA checks executed
+- [x] QA report saved to /qa/QA Results/
+- [ ] No breaking changes to downstream tables
+
+## 📊 QA Check Results
+
+| Table | Freshness | Nulls | Duplicates | Ref. Integrity | Overall |
+|-------|-----------|-------|------------|----------------|---------|
+| table_1 | ✅ | ✅ | ✅ | ✅ | ✅ Pass |
+
+**Full QA Report:** [PR-QA-{branch-name}-{date}.md](../qa/QA%20Results/PR-QA-{branch-name}-{date}.md)
+
+## ⚠️ Known Issues (Not Blocking)
+[List any known issues from known-issues.mdc that were found]
+
+## 📋 Health Score
+Overall: X% (based on qa-thresholds.mdc calculation)
+```
+
+## Step 5: Stage Files and Provide Push Command
+
+After generating both files:
+1. Stage the QA report: `git add "qa/QA Results/PR-QA-*.md"`
+2. Stage the PR body: `git add .github/pr-body.md`
+3. Provide the complete push + PR command:
+
+```bash
+git add "qa/QA Results/" .github/pr-body.md
+git commit -m "Add QA results for PR"
+git push origin {branch-name}
+gh pr create --title "{PR Title}" --body-file .github/pr-body.md --base main
+```
+
+## Automation
+
+The entire flow should be:
+1. User asks: "Prepare PR for my changes"
+2. Cursor runs QA, saves results, generates PR body
+3. Cursor provides single command to push + create PR
+4. User runs the command
+5. PR is created with filled description automatically
