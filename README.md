@@ -7,14 +7,14 @@ A standardized AI-powered data quality framework for dbt/BigQuery projects using
 ### One-Command Installation
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/BetterBodyCo/cursor-qa-framework/main/scripts/setup-qa-framework.sh | bash
+curl -sSL https://raw.githubusercontent.com/sarasanalytics-com/cursor-edm-qa-framework/main/scripts/update-qa-framework.sh | bash
 ```
 
 ### Manual Installation
 
 ```bash
 # Clone the framework
-git clone https://github.com/BetterBodyCo/cursor-qa-framework.git /tmp/qa-framework
+git clone https://github.com/sarasanalytics-com/cursor-qa-framework.git /tmp/qa-framework
 
 # Copy to your project
 cp -r /tmp/qa-framework/.cursor/rules .cursor/
@@ -87,6 +87,7 @@ tables:
           table: dim_table
           column: key
 ```
+The above can be done by using just a cursor prompt of 'update my qa_config.yml' based upon the contents and data from this repository' . Cursor will read off project.yml + metadata but make sure to review the output thoroughly to prevent incorrect QA checks in the future
 
 ### Step 3: Update Project Context
 
@@ -95,12 +96,15 @@ Edit `.cursor/rules/project-context.mdc` with your:
 - Dataset names
 - Key tables
 
+Similar to above, this can be also done by using just a cursor prompt of 'update my project-context.mdc' based upon the contents and data from this repository' . Cursor will read off project.yml + metadata but make sure to review the output thoroughly to prevent incorrect QA checks in the future
+
 ## 🎯 Usage
 
 ### Run QA Checks
 
 ```
 "Run QA checks on my_table"
+"Run QA checks on all tables"
 "Check data freshness for all tables"
 "Do referential integrity test on fact_orders"
 ```
@@ -167,7 +171,7 @@ Edit `.cursor/rules/known-issues.mdc`:
 Pull latest rules:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/BetterBodyCo/cursor-qa-framework/main/scripts/update-qa-framework.sh | bash
+curl -sSL https://raw.githubusercontent.com/sarasanalytics-com/cursor-edm-qa-framework/main/scripts/update-qa-framework.sh | bash
 ```
 
 ## 📞 Support
