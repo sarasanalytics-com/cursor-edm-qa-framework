@@ -132,6 +132,8 @@ This will:
 | Referential Integrity | Validate FK relationships |
 | Invalid Values | Find negative/invalid data |
 | Distribution | Show categorical value distributions |
+| Logic Changes | Summarise changes at a table level |
+| Data Impact | Summarise data impact based upon dev vs prod datasets |
 
 ## 🔧 Customization
 
