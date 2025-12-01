@@ -21,9 +21,13 @@ Always present QA results in this standardized format:
 
 ## 2. Quick Summary Table
 
-| Table | Freshness | Nulls | Duplicates | Ref. Integrity | Invalid Values | Overall |
-|-------|-----------|-------|------------|----------------|----------------|---------|
-| TableName | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | Status |
+| Table | Freshness | Nulls | Duplicates | Ref. Integrity | Invalid Values | Logic Change | Data Impact | Overall |
+|-------|-----------|-------|------------|----------------|----------------|--------------|-------------|---------|
+| TableName | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡 | ✅/🟡/🔴 | Status |
+
+**Legend for Logic Change & Data Impact:**
+- Logic Change: ✅ No change, 🟡 Changed (review needed)
+- Data Impact: ✅ None, 🟡 Low/Medium, 🔴 High
 
 ## 3. Detailed Results Per Table
 
@@ -59,6 +63,43 @@ For each table, show:
 |-------|-------|--------|
 | Negative quantity | X | ✅/🔴 |
 | Zero values | X | 🟡 Monitor |
+
+### Logic Change Assessment
+| Metric | Value |
+|--------|-------|
+| Change Type | Documentation / Logic / Config |
+| Logic Changed | ✅ No / 🟡 Yes |
+| Changes Detected | [List of changes from git diff] |
+
+### Data Impact Assessment (DEV vs PROD Comparison)
+
+#### Row Count & Value Comparison
+| Check | DEV | PROD | Change | Impact |
+|-------|-----|------|--------|--------|
+| Row Count | X | Y | Z% | ✅/🟡/🔴 |
+| {metric_1} Sum | X | Y | Z% | ✅/🟡/🔴 |
+| {metric_2} Sum | X | Y | Z% | ✅/🟡/🔴 |
+
+#### Schema Changes
+| Change Type | Column | Details | Impact |
+|-------------|--------|---------|--------|
+| New Column | column_name | data_type | 🟡 Low |
+| Removed Column | column_name | - | 🔴 High |
+| Type Changed | column_name | old → new | 🟡 Medium |
+
+#### Downstream Breakage
+| Dependent Table | Referenced Column | Status |
+|-----------------|-------------------|--------|
+| downstream_table | column_name | ✅ EXISTS / 🔴 MISSING |
+
+#### Impact Summary
+| Metric | Value |
+|--------|-------|
+| Row Count Change | X% |
+| Value Changes | X% avg across metrics |
+| Schema Changes | X new, Y removed, Z type changes |
+| Downstream Impact | None / Breaking |
+| **Overall Impact** | ✅ None / 🟡 Low / 🟡 Medium / 🔴 High |
 
 ## 4. Action Items
 
