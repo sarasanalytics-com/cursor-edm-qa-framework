@@ -241,8 +241,36 @@ After running all checks above, summarize findings:
 
 When user asks for QA on a table:
 1. Identify the table and its dataset
-2. Run ALL 8 standard checks above
-3. Run table-specific checks if defined
+2. Determine if table is **NEW** or **EXISTING** (check if PROD version exists)
+3. Run appropriate checks based on table type:
+
+### For NEW Tables (no PROD version exists)
+Run checks **1-6 only**:
+- ✅ 1. Data Freshness Check
+- ✅ 2. Null Value Check
+- ✅ 3. Duplicate Check
+- ✅ 4. Referential Integrity Check
+- ✅ 5. Invalid Values Check
+- ✅ 6. Distribution Check
+- ⚪ 7. Logic Change Check → **N/A** (no baseline to compare)
+- ⚪ 8. Data Impact Assessment → **N/A** (no PROD to compare)
+
+### For EXISTING Tables (PROD version exists)
+Run **ALL 8 checks**:
+- ✅ 1-6: All data quality checks
+- ✅ 7. Logic Change Check (compare git diff)
+- ✅ 8. Data Impact Assessment (compare DEV vs PROD)
+
+### How to Detect New vs Existing Table
+```sql
+-- Check if table exists in PROD
+SELECT COUNT(*) as exists_in_prod
+FROM `{project}.PROD_EDM_{layer}.INFORMATION_SCHEMA.TABLES`
+WHERE table_name = '{table_name}'
+```
+- If `exists_in_prod = 0` → NEW table
+- If `exists_in_prod > 0` → EXISTING table
+
 4. Present results in standard output format
 5. Flag any issues above thresholds
 6. Provide actionable recommendations
