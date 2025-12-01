@@ -31,7 +31,7 @@ When user asks to "prepare PR", "review for PR", or "create PR description":
 For ONLY the changed tables + downstream dependencies identified in Step 1:
 
 **Follow the existing QA rules defined in:**
-- `qa-check-standards.mdc` - For the 6 standard checks (freshness, nulls, duplicates, RI, invalid values, distribution)
+- `qa-check-standards.mdc` - For the 8 standard checks (freshness, nulls, duplicates, RI, invalid values, distribution, logic change, data impact)
 - `qa-thresholds.mdc` - For pass/fail thresholds
 - `qa-output-format.mdc` - For output formatting
 - `known-issues.mdc` - To exclude known/accepted issues
@@ -70,9 +70,9 @@ Format:
 
 ## 📊 QA Check Results
 
-| Table | Freshness | Nulls | Duplicates | Ref. Integrity | Overall |
-|-------|-----------|-------|------------|----------------|---------|
-| table_1 | ✅ | ✅ | ✅ | ✅ | ✅ Pass |
+| Table | Freshness | Nulls | Duplicates | Ref. Integrity | Invalid Values | Logic Change | Data Impact | Overall |
+|-------|-----------|-------|------------|----------------|----------------|--------------|-------------|---------|
+| table_1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Pass |
 
 **Full QA Report:** [PR-QA-{branch-name}-{date}.md](../qa/QA%20Results/PR-QA-{branch-name}-{date}.md)
 
@@ -83,25 +83,126 @@ Format:
 Overall: X% (based on qa-thresholds.mdc calculation)
 ```
 
-## Step 5: Stage Files and Provide Push Command
+## Step 5: Commit, Push & Create PR with GitHub CLI
 
-After generating both files:
-1. Stage the QA report: `git add "qa/QA Results/PR-QA-*.md"`
-2. Stage the PR body: `git add .github/pr-body.md`
-3. Provide the complete push + PR command:
+After generating both files, commit and provide the GitHub CLI commands.
+
+### 5.1 Stage and Commit
 
 ```bash
 git add "qa/QA Results/" .github/pr-body.md
 git commit -m "Add QA results for PR"
-git push origin {branch-name}
-gh pr create --title "{PR Title}" --body-file .github/pr-body.md --base main
 ```
 
-## Automation
+### 5.2 Push to Remote
+
+```bash
+git push origin {branch-name}
+```
+
+### 5.3 Create New PR (if PR doesn't exist)
+
+```bash
+gh pr create \
+  --title "{PR Title - descriptive of changes}" \
+  --body-file .github/pr-body.md \
+  --base main \
+  --head {branch-name}
+```
+
+**Example:**
+```bash
+gh pr create \
+  --title "Add documentation: sales_deepdive, marketing_deepdive, and QA framework" \
+  --body-file .github/pr-body.md \
+  --base main
+```
+
+### 5.4 Update Existing PR (if PR already exists)
+
+```bash
+# Push new commits (PR auto-updates)
+git push origin {branch-name}
+
+# Optionally update PR title/body
+gh pr edit {PR-number} --body-file .github/pr-body.md
+gh pr edit {PR-number} --title "New Title"
+```
+
+### 5.5 One-Liner Command (New PR)
+
+Provide this single command for the user to copy-paste:
+
+```bash
+git push origin {branch-name} && gh pr create --title "{PR Title}" --body-file .github/pr-body.md --base main
+```
+
+### 5.6 Check PR Status
+
+```bash
+# List open PRs
+gh pr list
+
+# View specific PR
+gh pr view {PR-number}
+
+# Open PR in browser
+gh pr view --web
+```
+
+## Step 6: Final Output to User
+
+Always end PR preparation with:
+
+1. **Summary table** of commits and files
+2. **GitHub CLI command** ready to copy-paste
+3. **PR link** (if PR already exists)
+
+Example output:
+```
+## ✅ PR Preparation Complete!
+
+### Commits in This PR
+| Commit | Description |
+|--------|-------------|
+| abc123 | Add comments to model |
+
+### 🚀 Create PR Command
+
+Copy and run this command:
+
+```bash
+git push origin abhishek-dev && gh pr create --title "Add documentation to presentation models" --body-file .github/pr-body.md --base main
+```
+
+Or if PR already exists, just push:
+```bash
+git push origin abhishek-dev
+```
+
+**Existing PR:** https://github.com/gorillacommerce/gorillacommerce_edm/pull/XXX
+```
+
+## Automation Flow
 
 The entire flow should be:
 1. User asks: "Prepare PR for my changes"
 2. Cursor runs QA, saves results, generates PR body
-3. Cursor provides single command to push + create PR
-4. User runs the command
-5. PR is created with filled description automatically
+3. Cursor commits all files
+4. Cursor provides GitHub CLI command to push + create PR
+5. User runs the command
+6. PR is created with filled description automatically
+
+## GitHub CLI Prerequisites
+
+If `gh` commands fail, user needs to:
+```bash
+# Install GitHub CLI (if not installed)
+brew install gh
+
+# Authenticate
+gh auth login
+
+# Set default repo (if needed)
+gh repo set-default
+```
