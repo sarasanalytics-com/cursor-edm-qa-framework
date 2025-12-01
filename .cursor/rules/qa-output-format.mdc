@@ -23,11 +23,19 @@ Always present QA results in this standardized format:
 
 | Table | Freshness | Nulls | Duplicates | Ref. Integrity | Invalid Values | Logic Change | Data Impact | Overall |
 |-------|-----------|-------|------------|----------------|----------------|--------------|-------------|---------|
-| TableName | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡 | ✅/🟡/🔴 | Status |
+| TableName | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/🔴 | ✅/🟡/⚪ | ✅/🟡/🔴/⚪ | Status |
 
-**Legend for Logic Change & Data Impact:**
-- Logic Change: ✅ No change, 🟡 Changed (review needed)
-- Data Impact: ✅ None, 🟡 Low/Medium, 🔴 High
+**Legend:**
+- ✅ Pass / No change
+- 🟡 Warning / Changed (review needed) / Low-Medium impact
+- 🔴 Fail / High impact
+- ⚪ **N/A** (for NEW tables - no PROD baseline to compare)
+
+**Logic Change & Data Impact for NEW vs EXISTING tables:**
+| Table Type | Logic Change | Data Impact |
+|------------|--------------|-------------|
+| NEW (no PROD exists) | ⚪ N/A | ⚪ N/A |
+| EXISTING (PROD exists) | ✅/🟡 | ✅/🟡/🔴 |
 
 ## 3. Detailed Results Per Table
 
@@ -65,13 +73,24 @@ For each table, show:
 | Zero values | X | 🟡 Monitor |
 
 ### Logic Change Assessment
+
+**For EXISTING tables:**
 | Metric | Value |
 |--------|-------|
 | Change Type | Documentation / Logic / Config |
 | Logic Changed | ✅ No / 🟡 Yes |
 | Changes Detected | [List of changes from git diff] |
 
+**For NEW tables:**
+| Metric | Value |
+|--------|-------|
+| Status | ⚪ N/A - New table (no baseline to compare) |
+
 ### Data Impact Assessment (DEV vs PROD Comparison)
+
+**For NEW tables:** ⚪ N/A - No PROD version exists to compare
+
+**For EXISTING tables:**
 
 #### Row Count & Value Comparison
 | Check | DEV | PROD | Change | Impact |
