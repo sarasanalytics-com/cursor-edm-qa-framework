@@ -71,11 +71,177 @@ GROUP BY 1
 ORDER BY 2 DESC
 ```
 
+## 7. Logic Change Check
+For changed tables in a PR, analyze the git diff to determine if SQL logic was modified:
+
+**Method:** Analyze `git diff main -- {file_path}`
+
+| Change Type | Logic Changed? | Status |
+|-------------|----------------|--------|
+| Only comments (`--`, `/* */`) added/modified | ❌ No | ✅ |
+| Only whitespace/formatting changes | ❌ No | ✅ |
+| SQL statements modified (SELECT, FROM, WHERE, JOIN) | ✅ Yes | 🟡 Review |
+| CTE logic changed | ✅ Yes | 🟡 Review |
+| Column calculations/aggregations changed | ✅ Yes | 🟡 Review |
+| New columns added/removed | ✅ Yes | 🟡 Review |
+| Filter conditions changed | ✅ Yes | 🟡 Review |
+| dbt config changed (materialization, partitioning) | ✅ Yes | 🟡 Review |
+
+**How to check:**
+```bash
+git diff main -- {model_file_path} | grep -E "^[+-]" | grep -v "^[+-]{3}" | grep -v "^[+-]\s*--" | grep -v "^[+-]\s*/\*" | grep -v "^[+-]\s*\*"
+```
+- If output is empty (only comments/whitespace) → Logic Changed = ❌ No
+- If output has SQL changes → Logic Changed = ✅ Yes
+
+## 8. Data Impact Assessment Check
+
+For tables where logic has changed, run these SQL comparisons between DEV and PROD datasets to assess actual data impact:
+
+### 8.1 Row Count Comparison (DEV vs PROD)
+```sql
+SELECT 
+    'Row Count Comparison' as check_type,
+    (SELECT COUNT(*) FROM `{project}.DEV_EDM_{layer}.{table_name}`) as dev_row_count,
+    (SELECT COUNT(*) FROM `{project}.PROD_EDM_{layer}.{table_name}`) as prod_row_count,
+    (SELECT COUNT(*) FROM `{project}.DEV_EDM_{layer}.{table_name}`) - 
+    (SELECT COUNT(*) FROM `{project}.PROD_EDM_{layer}.{table_name}`) as row_difference,
+    ROUND(
+        ((SELECT COUNT(*) FROM `{project}.DEV_EDM_{layer}.{table_name}`) - 
+         (SELECT COUNT(*) FROM `{project}.PROD_EDM_{layer}.{table_name}`)) * 100.0 / 
+        NULLIF((SELECT COUNT(*) FROM `{project}.PROD_EDM_{layer}.{table_name}`), 0), 2
+    ) as pct_change
+```
+
+**Thresholds:**
+| Row Count Change | Impact Level | Status |
+|------------------|--------------|--------|
+| 0% change | None | ✅ |
+| < 1% change | Low | 🟡 |
+| 1-5% change | Medium | 🟡 |
+| > 5% change | High | 🔴 |
+
+### 8.2 Value Changes Check (Key Metrics)
+Compare aggregated values for key numeric columns:
+```sql
+SELECT 
+    'Value Comparison' as check_type,
+    '{metric_column}' as metric,
+    (SELECT SUM({metric_column}) FROM `{project}.DEV_EDM_{layer}.{table_name}`) as dev_sum,
+    (SELECT SUM({metric_column}) FROM `{project}.PROD_EDM_{layer}.{table_name}`) as prod_sum,
+    ROUND(
+        ((SELECT SUM({metric_column}) FROM `{project}.DEV_EDM_{layer}.{table_name}`) - 
+         (SELECT SUM({metric_column}) FROM `{project}.PROD_EDM_{layer}.{table_name}`)) * 100.0 / 
+        NULLIF((SELECT SUM({metric_column}) FROM `{project}.PROD_EDM_{layer}.{table_name}`), 0), 2
+    ) as pct_change
+```
+
+**Thresholds:**
+| Value Change | Impact Level | Status |
+|--------------|--------------|--------|
+| 0% change | None | ✅ |
+| < 0.1% change | Low | 🟡 |
+| 0.1-1% change | Medium | 🟡 |
+| > 1% change | High | 🔴 |
+
+### 8.3 Schema Changes Check
+Compare column structure between DEV and PROD:
+```sql
+-- Columns in DEV but not in PROD (new columns)
+SELECT 
+    'New Column (DEV only)' as change_type,
+    column_name,
+    data_type
+FROM `{project}.DEV_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS`
+WHERE table_name = '{table_name}'
+  AND column_name NOT IN (
+    SELECT column_name 
+    FROM `{project}.PROD_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS`
+    WHERE table_name = '{table_name}'
+  )
+
+UNION ALL
+
+-- Columns in PROD but not in DEV (removed columns)
+SELECT 
+    'Removed Column (PROD only)' as change_type,
+    column_name,
+    data_type
+FROM `{project}.PROD_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS`
+WHERE table_name = '{table_name}'
+  AND column_name NOT IN (
+    SELECT column_name 
+    FROM `{project}.DEV_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS`
+    WHERE table_name = '{table_name}'
+  )
+
+UNION ALL
+
+-- Data type changes
+SELECT 
+    'Data Type Changed' as change_type,
+    d.column_name,
+    CONCAT(p.data_type, ' -> ', d.data_type) as data_type
+FROM `{project}.DEV_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS` d
+JOIN `{project}.PROD_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS` p
+  ON d.table_name = p.table_name AND d.column_name = p.column_name
+WHERE d.table_name = '{table_name}'
+  AND d.data_type != p.data_type
+```
+
+**Thresholds:**
+| Schema Change | Impact Level | Status |
+|---------------|--------------|--------|
+| No changes | None | ✅ |
+| New columns added | Low (additive) | 🟡 |
+| Data type changed | Medium | 🟡 |
+| Columns removed | High (breaking) | 🔴 |
+
+### 8.4 Downstream Breakage Check
+Check if downstream tables reference columns being removed:
+```sql
+-- Find downstream tables that reference this table
+-- (Check in qa_config.yml dependencies section)
+-- Then verify all referenced columns still exist
+
+SELECT 
+    'Downstream Dependency' as check_type,
+    '{downstream_table}' as dependent_table,
+    '{referenced_column}' as referenced_column,
+    CASE 
+        WHEN '{referenced_column}' IN (
+            SELECT column_name 
+            FROM `{project}.DEV_EDM_{layer}.INFORMATION_SCHEMA.COLUMNS`
+            WHERE table_name = '{table_name}'
+        ) THEN 'EXISTS'
+        ELSE 'MISSING - BREAKING CHANGE'
+    END as status
+```
+
+### 8.5 Data Impact Summary
+
+After running all checks above, summarize findings:
+
+| Check | DEV | PROD | Change | Impact |
+|-------|-----|------|--------|--------|
+| Row Count | X | Y | Z% | ✅/🟡/🔴 |
+| {metric_1} Sum | X | Y | Z% | ✅/🟡/🔴 |
+| {metric_2} Sum | X | Y | Z% | ✅/🟡/🔴 |
+| Schema Changes | - | - | {count} changes | ✅/🟡/🔴 |
+| Downstream | - | - | {status} | ✅/🔴 |
+| **Overall Impact** | - | - | - | **{level}** |
+
+**Overall Impact Level Calculation:**
+- ✅ **None**: All checks pass, no changes detected
+- 🟡 **Low**: Only additive changes (new columns, <1% row/value change)
+- 🟡 **Medium**: Moderate changes (1-5% row/value change, data type changes)
+- 🔴 **High**: Breaking changes (columns removed, >5% change, downstream breakage)
+
 ## How to Run QA
 
 When user asks for QA on a table:
 1. Identify the table and its dataset
-2. Run ALL standard checks above
+2. Run ALL 8 standard checks above
 3. Run table-specific checks if defined
 4. Present results in standard output format
 5. Flag any issues above thresholds
