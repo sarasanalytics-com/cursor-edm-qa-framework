@@ -7,7 +7,7 @@ A standardized AI-powered data quality framework for dbt/BigQuery projects using
 ### One-Command Installation
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/sarasanalytics-com/cursor-edm-qa-framework/main/scripts/update-qa-framework.sh | bash
+curl -sSL https://raw.githubusercontent.com/sarasanalytics-com/cursor-edm-qa-framework/main/scripts/setup-qa-framework.sh | bash
 ```
 
 ### Manual Installation
