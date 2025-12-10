@@ -239,10 +239,14 @@ After running all checks above, summarize findings:
 
 ## How to Run QA
 
+**Default Behavior:** Always run QA checks on **changed tables only** (based on git diff or user context), unless user explicitly requests specific tables or all tables.
+
 When user asks for QA on a table:
 1. Identify the table and its dataset
 2. Determine if table is **NEW** or **EXISTING** (check if PROD version exists)
 3. Run appropriate checks based on table type:
+
+**Environment rule:** Always run data-quality checks against **DEV** datasets. For Logic Change (7) and Data Impact (8), compare **DEV vs PROD** (DEV as candidate, PROD as baseline). If PROD is missing, mark those checks as ⚪ N/A.
 
 ### For NEW Tables (no PROD version exists)
 Run checks **1-6 only**:
@@ -271,6 +275,6 @@ WHERE table_name = '{table_name}'
 - If `exists_in_prod = 0` → NEW table
 - If `exists_in_prod > 0` → EXISTING table
 
-4. Present results in standard output format
+4. Present results in standard output format as per qa-output-format rule
 5. Flag any issues above thresholds
 6. Provide actionable recommendations
