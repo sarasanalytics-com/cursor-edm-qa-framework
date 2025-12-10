@@ -6,7 +6,7 @@ alwaysApply: true
 
 # QA Output Format
 
-Always present QA results in this standardized format:
+Always present QA results in this standardized format with **only 1 .md file per QA run**, regardless of how many tables are checked. Multiple tables should be included in the same report with separate rows in the Quick Summary Table and separate subsections in Detailed Results.
 
 ## 1. Executive Summary
 
@@ -18,6 +18,8 @@ Always present QA results in this standardized format:
 | Warnings | X |
 | Failed | X |
 | **Overall Health Score** | **X%** |
+
+**Note:** For multiple tables, counts are summed across all tables (e.g., Total Checks Run = 8 × number of tables).
 
 ## 2. Quick Summary Table
 
@@ -36,6 +38,8 @@ Always present QA results in this standardized format:
 |------------|--------------|-------------|
 | NEW (no PROD exists) | ⚪ N/A | ⚪ N/A |
 | EXISTING (PROD exists) | ✅/🟡 | ✅/🟡/🔴 |
+
+**Note:** Add one row per table checked in the Quick Summary Table above.
 
 ## 3. Detailed Results Per Table
 
