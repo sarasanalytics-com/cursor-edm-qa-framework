@@ -49,6 +49,7 @@ your-project/
 
 ### Step 1: Set Up BigQuery MCP
 
+Follow instructions to install MCP toolbox - https://docs.cloud.google.com/bigquery/docs/pre-built-tools-with-mcp-toolbox
 Create `.cursor/mcp.json`:
 
 ```json
