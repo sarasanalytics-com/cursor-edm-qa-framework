@@ -6,6 +6,7 @@ alwaysApply: true
 
 # QA Check Standards
 
+When user asks for QA check, follow up with a question of whether user has run dev tables with the changes. If they say yes, then only proceed with QA checks otherwise ask them to run the models first
 When running QA checks on any table, ALWAYS run these standard checks:
 
 ## 1. Data Freshness Check
