@@ -123,6 +123,8 @@ This will:
 3. Save QA report to `/qa/QA Results/`
 4. Generate PR description
 5. Give you the command to create PR
+6. If Github CLI missing, Cursor will try to install and then raise PR. 
+7. It will also give manual commands in case user wants to put themselves or in case of any issue
 
 ## 📊 QA Checks Included
 
