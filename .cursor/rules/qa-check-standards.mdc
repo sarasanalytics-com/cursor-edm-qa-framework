@@ -6,40 +6,73 @@ alwaysApply: true
 
 # QA Check Standards
 
-When running QA checks on any table, ALWAYS run these standard checks:
+When running QA checks on any table, ALWAYS run these standard checks.
 
-## 1. Data Freshness Check
+---
+
+## ⚠️ CRITICAL: Environment Rules (READ FIRST)
+
+**THIS IS MANDATORY. DO NOT SKIP THIS SECTION.**
+
+| Check | Environment | Query PROD? | Notes |
+|-------|-------------|-------------|-------|
+| **1. Data Freshness** | 🟢 **DEV ONLY** | ❌ NO | Query DEV dataset only |
+| **2. Null Values** | 🟢 **DEV ONLY** | ❌ NO | Query DEV dataset only |
+| **3. Duplicates** | 🟢 **DEV ONLY** | ❌ NO | Query DEV dataset only |
+| **4. Ref. Integrity** | 🟢 **DEV ONLY** | ❌ NO | Query DEV dataset only |
+| **5. Invalid Values** | 🟢 **DEV ONLY** | ❌ NO | Query DEV dataset only |
+| **6. Distribution** | 🟢 **DEV ONLY** | ❌ NO | Query DEV dataset only |
+| **7. Logic Change** | 🔵 **Git Diff** | ❌ NO | No SQL queries - analyze git diff only |
+| **8. Data Impact** | 🟡 **DEV vs PROD** | ✅ YES | Compare DEV to PROD baseline |
+
+### Summary:
+- **Checks 1-6:** Query **DEV_EDM_*** datasets ONLY. Never query PROD for these checks.
+- **Check 7:** Analyze `git diff main` output. No BigQuery queries needed.
+- **Check 8:** This is the ONLY check that queries both DEV and PROD to compare data impact.
+
+### Why This Matters:
+- DEV contains the candidate changes being tested
+- PROD is the baseline for comparison (Check 8 only)
+- Querying PROD for checks 1-6 is wasteful and confusing in QA reports
+
+---
+
+## 1. Data Freshness Check 🟢 DEV ONLY
 ```sql
+-- ENVIRONMENT: DEV ONLY - Do NOT query PROD
 SELECT 
     'Data Freshness' as check_type,
     MAX({date_column}) as max_date,
     MIN({date_column}) as min_date,
     DATE_DIFF(CURRENT_DATE(), MAX({date_column}), DAY) as days_since_last_record
-FROM `{table_path}`
+FROM `{project}.DEV_EDM_{layer}.{table_name}`
 ```
 
-## 2. Null Value Check
+## 2. Null Value Check 🟢 DEV ONLY
 For each key column, check null percentages:
 ```sql
+-- ENVIRONMENT: DEV ONLY - Do NOT query PROD
 SELECT 
     COUNT(*) as total_rows,
     COUNTIF({column} IS NULL) as null_count,
     ROUND(COUNTIF({column} IS NULL) * 100.0 / COUNT(*), 2) as null_pct
-FROM `{table_path}`
+FROM `{project}.DEV_EDM_{layer}.{table_name}`
 ```
 
-## 3. Duplicate Check
+## 3. Duplicate Check 🟢 DEV ONLY
 ```sql
+-- ENVIRONMENT: DEV ONLY - Do NOT query PROD
 SELECT 
     COUNT(*) as total_rows,
     COUNT(DISTINCT {primary_key_columns}) as unique_rows,
     COUNT(*) - COUNT(DISTINCT {primary_key_columns}) as duplicate_count
-FROM `{table_path}`
+FROM `{project}.DEV_EDM_{layer}.{table_name}`
 ```
 
-## 4. Referential Integrity Check
+## 4. Referential Integrity Check 🟢 DEV ONLY
 For each foreign key relationship:
 ```sql
+-- ENVIRONMENT: DEV ONLY - Do NOT query PROD
 SELECT 
     '{fact_table} -> {dim_table}' as relationship,
     '{fk_column}' as fk_column,
@@ -47,32 +80,35 @@ SELECT
     COUNT(DISTINCT CASE WHEN d.{pk_column} IS NULL THEN f.{fk_column} END) as orphan_fk_values,
     ROUND(COUNT(DISTINCT CASE WHEN d.{pk_column} IS NULL THEN f.{fk_column} END) * 100.0 / 
           NULLIF(COUNT(DISTINCT f.{fk_column}), 0), 2) as orphan_pct
-FROM `{fact_table}` f
-LEFT JOIN `{dim_table}` d ON f.{fk_column} = d.{pk_column}
+FROM `{project}.DEV_EDM_{layer}.{fact_table}` f
+LEFT JOIN `{project}.DEV_EDM_{layer}.{dim_table}` d ON f.{fk_column} = d.{pk_column}
 ```
 
-## 5. Invalid Values Check
+## 5. Invalid Values Check 🟢 DEV ONLY
 ```sql
+-- ENVIRONMENT: DEV ONLY - Do NOT query PROD
 SELECT 
     COUNTIF({numeric_column} < 0) as negative_values,
     COUNTIF({numeric_column} = 0) as zero_values
-FROM `{table_path}`
+FROM `{project}.DEV_EDM_{layer}.{table_name}`
 ```
 
-## 6. Distribution Check
+## 6. Distribution Check 🟢 DEV ONLY
 For categorical columns:
 ```sql
+-- ENVIRONMENT: DEV ONLY - Do NOT query PROD
 SELECT 
     {categorical_column},
     COUNT(*) as row_count,
     ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as pct_of_total
-FROM `{table_path}`
+FROM `{project}.DEV_EDM_{layer}.{table_name}`
 GROUP BY 1
 ORDER BY 2 DESC
 ```
 
-## 7. Logic Change Check
-For changed tables in a PR, analyze the git diff to determine if SQL logic was modified:
+## 7. Logic Change Check 🔵 GIT DIFF ONLY (No SQL Queries)
+For changed tables in a PR, analyze the git diff to determine if SQL logic was modified.
+**No BigQuery queries needed for this check - analyze git diff output only.**
 
 **Method:** Analyze `git diff main -- {file_path}`
 
@@ -94,9 +130,11 @@ git diff main -- {model_file_path} | grep -E "^[+-]" | grep -v "^[+-]{3}" | grep
 - If output is empty (only comments/whitespace) → Logic Changed = ❌ No
 - If output has SQL changes → Logic Changed = ✅ Yes
 
-## 8. Data Impact Assessment Check
+## 8. Data Impact Assessment Check 🟡 DEV vs PROD COMPARISON
 
-For tables where logic has changed, run these SQL comparisons between DEV and PROD datasets to assess actual data impact:
+**This is the ONLY check that queries PROD.** Compare DEV (candidate) to PROD (baseline) to assess actual data impact.
+
+For tables where logic has changed, run these SQL comparisons between DEV and PROD datasets:
 
 ### 8.1 Row Count Comparison (DEV vs PROD)
 ```sql
@@ -242,12 +280,15 @@ After running all checks above, summarize findings:
 **Default Behavior:** Always run QA checks on **changed tables only** (based on git diff or user context), unless user explicitly requests specific tables or all tables.
 
 When user asks for QA on a table:
-1. When user asks for QA check, follow up with a question of whether user has run dev tables with the changes. If they say yes, then only proceed with QA checks otherwise ask them to run the models first
-2. Identify the table and its dataset
-3. Determine if table is **NEW** or **EXISTING** (check if PROD version exists)
-4. Run appropriate checks based on table type:
+1. Identify the table and its dataset
+2. Determine if table is **NEW** or **EXISTING** (check if PROD version exists)
+3. Run appropriate checks based on table type
 
-**Environment rule:** Always run data-quality checks against **DEV** datasets. For Logic Change (7) and Data Impact (8), compare **DEV vs PROD** (DEV as candidate, PROD as baseline). If PROD is missing, mark those checks as ⚪ N/A.
+### ⚠️ ENVIRONMENT REMINDER (Re-read if unsure)
+| Checks 1-6 | Check 7 | Check 8 |
+|------------|---------|---------|
+| 🟢 **DEV ONLY** | 🔵 **Git Diff** | 🟡 **DEV vs PROD** |
+| Never query PROD | No SQL queries | Only check that queries PROD |
 
 ### For NEW Tables (no PROD version exists)
 Run checks **1-6 only**:
